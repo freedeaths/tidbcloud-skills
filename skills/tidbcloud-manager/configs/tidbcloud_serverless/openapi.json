@@ -1,0 +1,3569 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "TiDB Cloud Starter and Essential API",
+    "description": "*TiDB Cloud API is in beta.*\n\nThis API manages [TiDB Cloud Starter](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#tidb-cloud-serverless) and [TiDB Cloud Essential](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#essential) clusters. For [TiDB Cloud Dedicated](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#tidb-cloud-dedicated) clusters, use the [TiDB Cloud Dedicated API](https://docs.pingcap.com/tidbcloud/api/v1beta1/dedicated/). For more information about TiDB Cloud API, see [TiDB Cloud API Overview](https://docs.pingcap.com/tidbcloud/api-overview/).\n\n# Overview\n\nThe TiDB Cloud API is a [REST interface](https://en.wikipedia.org/wiki/Representational_state_transfer) that provides you with programmatic access to manage clusters and related resources within TiDB Cloud.\n\nThe API has the following features:\n\n- **JSON entities.** All entities are expressed in JSON.\n- **HTTPS-only.** You can only access the API via HTTPS, ensuring all the data sent over the network is encrypted with TLS.\n- **Key-based access and digest authentication.** Before you access TiDB Cloud API, you must generate an API key. All requests are authenticated through [HTTP Digest Authentication](https://en.wikipedia.org/wiki/Digest_access_authentication), ensuring the API key is never sent over the network.\n\n# Get Started\n\nThis guide helps you make your first API call to TiDB Cloud API. You'll learn how to authenticate a request, build a request, and interpret the response.\n\n## Prerequisites\n\nTo complete this guide, you need to perform the following tasks:\n\n- Create a [TiDB Cloud account](https://tidbcloud.com/free-trial)\n- Install [curl](https://curl.se/)\n\n## Step 1. Create an API key\n\nTo create an API key, log in to your TiDB Cloud console. Navigate to the [**API Keys**](https://tidbcloud.com/org-settings/api-keys) page of your organization, and create an API key.\n\nAn API key contains a public key and a private key. Copy and save them in a secure location. You will need to use the API key later in this guide.\n\nFor more details about creating API keys, refer to [API Key Management](#section/Authentication/API-Key-Management).\n\n## Step 2. Make your first API call\n\n### Build an API call\n\nTiDB Cloud API call consists of the following components:\n\n- **A host**. The host for TiDB Cloud API is \u003chttps://serverless.tidbapi.com\u003e.\n- **An API Key**. The public key and the private key are required for authentication.\n- **A request**. When submitting data to a resource via `POST`, `PATCH`, or `PUT`, you must submit your payload in JSON.\n\nIn this guide, you call the [List all clusters](#tag/Cluster/operation/ClusterService_ListClusters) endpoint. For the detailed description of the endpoint, see the [API reference](#tag/Cluster/operation/ClusterService_ListClusters).\n\n### Call an API endpoint\n\nTo get all clusters in your organization, run the following command in your terminal. Remember to change `YOUR_PUBLIC_KEY` to your public key and `YOUR_PRIVATE_KEY` to your private key.\n\n```shell\ncurl --digest \\\n --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n --request GET \\\n --url 'https://serverless.tidbapi.com/v1beta1/clusters'\n```\n\n## Step 3. Check the response\n\nAfter making the API call, if the status code in response is `200` and you see details about all clusters in your organization, your request is successful.\n\n# Authentication\n\nThe TiDB Cloud API uses [HTTP Digest Authentication](https://en.wikipedia.org/wiki/Digest_access_authentication). It protects your private key from being sent over the network. For more details about HTTP Digest Authentication, refer to the [IETF RFC](https://datatracker.ietf.org/doc/html/rfc7616).\n\n## API key overview\n\n- The API key contains a public key and a private key, which act as the username and password required in the HTTP Digest Authentication. The private key only displays upon the key creation.\n- The API key belongs to your organization and acts as the `Organization Owner` role. You can check [permissions of owner](https://docs.pingcap.com/tidbcloud/manage-user-access#configure-member-roles).\n- You must provide the correct API key in every request. Otherwise, TiDB Cloud responds with a `401` error.\n\n## API key management\n\n### Create an API key\n\nOnly the **owner** of an organization can create an API key.\n\nTo create an API key in an organization, perform the following steps:\n\n1. In the [TiDB Cloud console](https://tidbcloud.com), switch to your target organization using the combo box in the upper-left corner.\n2. In the left navigation pane, click **Organization Settings** \u003e **API Keys**.\n3. On the **API Keys** page, click **Create API Key**.\n4. Enter a description for your API key. The role of the API key is always `Organization Owner` currently.\n5. Click **Next**. Copy and save the public key and the private key.\n6. Make sure that you have copied and saved the private key in a secure location. The private key only displays upon the creation. After leaving this page, you will not be able to get the full private key again.\n7. Click **Done**.\n\n### View details of an API key\n\nTo view details of an API key, perform the following steps:\n\n1. In the [TiDB Cloud console](https://tidbcloud.com), switch to your target organization using the combo box in the upper-left corner.\n2. In the left navigation pane, click **Organization Settings** \u003e **API Keys**.\n3. You can view the details of the API keys on the page.\n\n### Edit an API key\n\nOnly the **owner** of an organization can modify an API key.\n\nTo edit an API key in an organization, perform the following steps:\n\n1. In the [TiDB Cloud console](https://tidbcloud.com), switch to your target organization using the combo box in the upper-left corner.\n2. In the left navigation pane, click **Organization Settings** \u003e **API Keys**.\n3. On the **API Keys** page, click **...** in the API key row that you want to change, and then click **Edit**.\n4. You can update the API key description.\n5. Click **Update**.\n\n### Delete an API key\n\nOnly the **owner** of an organization can delete an API key.\n\nTo delete an API key in an organization, perform the following steps:\n\n1. In the [TiDB Cloud console](https://tidbcloud.com), switch to your target organization using the combo box in the upper-left corner.\n2. In the left navigation pane, click **Organization Settings** \u003e **API Keys**.\n3. On the **API Keys** page, click **...** in the API key row that you want to delete, and then click **Delete**.\n4. Click **I understand, delete it.**\n\n# Rate Limiting\n\nThe TiDB Cloud API allows up to 100 requests per minute per API key. If you exceed the rate limit, the API returns a `429` error. For more quota, you can [submit a request](https://support.pingcap.com/hc/en-us/requests/new?ticket_form_id=7800003722519) to contact our support team.\n\nEach API request returns the following headers about the limit.\n\n- `X-Ratelimit-Limit-Minute`: The number of requests allowed per minute. It is 100 currently.\n- `X-Ratelimit-Remaining-Minute`: The number of remaining requests in the current minute. When it reaches `0`, the API returns a `429` error and indicates that you exceed the rate limit.\n- `X-Ratelimit-Reset`: The time in seconds at which the current rate limit resets.\n\nIf you exceed the rate limit, an error response returns like this.\n\n```\n\u003e HTTP/2 429\n\u003e date: Fri, 22 Jul 2022 05:28:37 GMT\n\u003e content-type: application/json\n\u003e content-length: 66\n\u003e x-ratelimit-reset: 23\n\u003e x-ratelimit-remaining-minute: 0\n\u003e x-ratelimit-limit-minute: 100\n\u003e x-kong-response-latency: 2\n\u003e server: kong/2.8.1\n\n\u003e {\"details\":[],\"code\":49900007,\"message\":\"The request exceeded the limit of 100 times per apikey per minute. For more quota, please contact us: https://support.pingcap.com/hc/en-us/requests/new?ticket_form_id=7800003722519\"}\n```\n\n# API Changelog\n\nThis changelog lists all changes to the TiDB Cloud API.\n\n\u003c!-- In reverse chronological order --\u003e\n\n## 20250812\n\n- Initial release of the TiDB Cloud Starter and Essential API, including the following resources and endpoints:\n\n    - Cluster:\n        - [List TiDB Cloud Starter and Essential clusters](#tag/Cluster/operation/ClusterService_ListClusters)\n        - [Create a new TiDB Cloud Starter or Essential cluster](#tag/Cluster/operation/ClusterService_CreateCluster)\n        - [Get details of a TiDB Cloud Starter or Essential cluster](#tag/Cluster/operation/ClusterService_GetCluster)\n        - [Delete a TiDB Cloud Starter or Essential cluster](#tag/Cluster/operation/ClusterService_DeleteCluster)\n        - [Update a TiDB Cloud Starter or Essential cluster](#tag/Cluster/operation/ClusterService_PartialUpdateCluster)\n        - [List available regions for an organization](#tag/Cluster/operation/ClusterService_ListRegions)\n    - Branch:\n        - [List branches](#tag/Branch/operation/BranchService_ListBranches)\n        - [Create a branch](#tag/Branch/operation/BranchService_CreateBranch)\n        - [Get details of a branch](#tag/Branch/operation/BranchService_GetBranch)\n        - [Delete a branch](#tag/Branch/operation/BranchService_DeleteBranch)\n        - [Reset a branch](#tag/Branch/operation/BranchService_ResetBranch)\n    - Export:\n        - [List export tasks for a cluster](#tag/Export/operation/ExportService_ListExports)\n        - [Create an export task](#tag/Export/operation/ExportService_CreateExport)\n        - [Get details of an export task](#tag/Export/operation/ExportService_GetExport)\n        - [Delete an export task](#tag/Export/operation/ExportService_DeleteExport)\n        - [Cancel an export task](#tag/Export/operation/ExportService_CancelExport)\n    - Import:\n        - [List import tasks for a cluster](#tag/Import/operation/ImportService_ListImports)\n        - [Create an import task](#tag/Import/operation/ImportService_CreateImport)\n        - [Get an import task](#tag/Import/operation/ImportService_GetImport)\n        - [Cancel an import task](#tag/Import/operation/ImportService_CancelImport)\n",
+    "version": "v1beta1"
+  },
+  "tags": [
+    {
+      "name": "Cluster"
+    },
+    {
+      "name": "Branch"
+    },
+    {
+      "name": "Export"
+    },
+    {
+      "name": "Import"
+    }
+  ],
+  "host": "serverless.tidbapi.com",
+  "basePath": "/v1beta1",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/clusters": {
+      "get": {
+        "summary": "List TiDB Cloud Starter and Essential clusters",
+        "operationId": "ClusterService_ListClusters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1ListClustersResponse"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageSize",
+            "description": "The maximum number of clusters to return. If not specified, at most 10 clusters will be returned. The maximum value is `100`. Values greater than `100` are set to `100`.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "maximum": 100,
+            "minimum": 1
+          },
+          {
+            "name": "pageToken",
+            "description": "The pagination token received from a previous [List clusters](#tag/Cluster/operation/ClusterService_ListClusters) request. Use this token to retrieve the next page of results.\n\n**Note**: When paginating, all other parameters must match the original request.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter",
+            "description": "An expression that filters the list of clusters based on specific criteria. Uses Google AIP syntax with `=` and `AND` operators. You can filter by `region`, `state`, `projectId`, `clusterId`, `displayName`, and `labels`.\n\n**Available filters**:\n- `region.provider`: the cloud provider where the cluster is located, such as `aws` or `alicloud`.\n- `region.name`: the name of the region where the cluster is located, in the format of `regions/{provider}-{region}`, such as `regions/aws-us-east-1`.\n- `state`: the state of the cluster state, such as `ACTIVE` or `CREATING`.\n- `projectId`: the ID of the project ID. You can specify multiple values separated by commas.\n- `clusterId`: the ID of the cluster. You can specify multiple values separated by commas.\n- `displayName`: the display name of the cluster.\n- `labels.{key}`: the labels of the cluster labels, such as `labels.environment=production`.\n\n**Examples**:\n- `filter=region.provider=\"aws\" AND state=\"ACTIVE\"`\n- `filter=projectId=12345 AND displayName=\"my-cluster\"`",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "skip",
+            "description": "The number of clusters to skip before returning results. If the value exceeds the total number of clusters, the response is `200` with an empty list and no `nextPageToken`.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create a new TiDB Cloud Starter or Essential cluster",
+        "operationId": "ClusterService_CreateCluster",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cluster",
+            "description": "The cluster to create.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+            }
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n    \"displayName\": \"test\",\n    \"labels\": {\n        \"tidb.cloud/project\": \"2293484\"\n    },\n    \"region\": {\n        \"name\": \"regions/aws-us-east-1\"\n    }\n}'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}": {
+      "get": {
+        "summary": "Get details of a TiDB Cloud Starter or Essential cluster",
+        "operationId": "ClusterService_GetCluster",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "view",
+            "description": "The detail level of the cluster information to return.\n\n- `BASIC`: returns only basic cluster information.\n- `FULL`: returns complete cluster details.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "default": "FULL",
+            "enum": [
+              "BASIC",
+              "FULL"
+            ]
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a TiDB Cloud Starter or Essential cluster",
+        "operationId": "ClusterService_DeleteCluster",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to delete.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request DELETE 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{cluster.clusterId}": {
+      "patch": {
+        "summary": "Update a TiDB Cloud Starter or Essential cluster",
+        "operationId": "ClusterService_PartialUpdateCluster",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cluster.clusterId",
+            "description": "The ID of the cluster to update.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1beta1ClusterServicePartialUpdateClusterBody"
+            }
+          }
+        ],
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request PATCH 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n  \"updateMask\": \"displayName\",\n  \"cluster\": {\n    \"displayName\": \"test\",\n    \"spendingLimit\": {\n      \"monthly\": 10000\n    },\n    \"automatedBackupPolicy\": {\n      \"startTime\": \"10:00\"\n    },\n    \"endpoints\": {\n      \"public\": {\n        \"disabled\": false,\n        \"authorizedNetworks\": [\n          {\n            \"startIpAddress\": \"0.0.0.0\",\n            \"endIpAddress\": \"255.255.255.255\",\n            \"displayName\": \"allow-all\"\n          }\n        ]\n      }\n    },\n    \"labels\": {\n      \"label1\": \"label1\"\n    },\n    \"auditLogConfig\": {\n      \"enabled\": true,\n      \"unredacted\": true\n    },\n    \"autoScaling\": {\n      \"minRcu\": 20000,\n      \"maxRcu\": 30000\n    }\n  }\n}'"
+          }
+        ]
+      }
+    },
+    "/regions": {
+      "get": {
+        "summary": "List available regions for an organization",
+        "description": "Before creating a TiDB Cloud Starter or Essential cluster, you can use this endpoint to list available regions in your organization.",
+        "operationId": "ClusterService_ListRegions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1ListRegionsResponse"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Cluster"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/regions' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/branches": {
+      "get": {
+        "summary": "List branches",
+        "operationId": "BranchService_ListBranches",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1ListBranchesResponse"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to which the [branch](https://docs.pingcap.com/tidbcloud/branch-overview/) belongs.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "The maximum number of branches to return. If not specified, at most 10 branches will be returned. The maximum value is `100`. Values greater than `100` are set to `100`.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "maximum": 100,
+            "minimum": 1
+          },
+          {
+            "name": "pageToken",
+            "description": "The pagination token received from a previous [List branches](#tag/Branch/operation/BranchService_ListBranches) request. Use this token to retrieve the next page of results.\n\n**Note**: When paginating, all other parameters must match the original request.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Branch"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/branches' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create a branch",
+        "operationId": "BranchService_CreateBranch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Branch"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to which the branch belongs.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "branch",
+            "description": "The branch being created.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1beta1Branch"
+            }
+          }
+        ],
+        "tags": [
+          "Branch"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/branches' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n    \"displayName\": \"test\"\n}'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/branches/{branchId}": {
+      "get": {
+        "summary": "Get details of a branch",
+        "operationId": "BranchService_GetBranch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Branch"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to which the branch belongs.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "branchId",
+            "description": "The ID of the branch.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "view",
+            "description": "The detail level of the branch information to return.\n\n- `BASIC`: returns only basic branch information.\n- `FULL`: returns complete branch details.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "default": "FULL",
+            "enum": [
+              "BASIC",
+              "FULL"
+            ]
+          }
+        ],
+        "tags": [
+          "Branch"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/branches/{branch_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete a branch",
+        "operationId": "BranchService_DeleteBranch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Branch"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to which the branch belongs.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "branchId",
+            "description": "The ID of the branch.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Branch"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request DELETE 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/branches/{branch_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/branches/{branchId}:reset": {
+      "post": {
+        "summary": "Reset a branch",
+        "description": "Resets a branch to match the current state of its parent branch.",
+        "operationId": "BranchService_ResetBranch",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Branch"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to which the branch belongs.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "branchId",
+            "description": "The ID of the branch.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Branch"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request POST 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/branches/{branch_id}:reset' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/exports": {
+      "get": {
+        "summary": "List export tasks for a cluster",
+        "operationId": "ExportService_ListExports",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1ListExportsResponse"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to list export tasks for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "The maximum number of exports to return. If not specified, at most 10 exports will be returned. The maximum value is `100`. Values greater than `100` are set to `100`.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "maximum": 100,
+            "minimum": 1
+          },
+          {
+            "name": "pageToken",
+            "description": "The pagination token received from a previous [List export tasks](#tag/Export/operation/ExportService_ListExports) request. Use this token to retrieve the next page of results.\n\n**Note**: When paginating, all other parameters must match the original request.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "orderBy",
+            "description": "Specifies the sorting order of results. Use a comma-separated list of field names, optionally appending `desc` for descending order. For example, `createTime desc`. By default, fields are sorted in ascending order.\n\nSupported field: `createTime`.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Export"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/exports' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n  \"exportOptions\": {\n    \"fileType\": \"PARQUET\",\n    \"filter\": {\n      \"table\": {\n        \"patterns\": [\n            \"test.*\"\n        ]\n      }\n    },\n    \"parquetFormat\": {\n      \"compression\": \"GZIP\"\n    }\n  },\n  \"target\": {\n    \"type\": \"LOCAL\"\n  }\n}'"
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create an export task",
+        "operationId": "ExportService_CreateExport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Export"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ExportServiceCreateExportBody"
+            }
+          }
+        ],
+        "tags": [
+          "Export"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/exports' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n  \"exportOptions\": {\n    \"fileType\": \"PARQUET\",\n    \"filter\": {\n      \"table\": {\n        \"patterns\": [\n            \"test.*\"\n        ]\n      }\n    },\n    \"parquetFormat\": {\n      \"compression\": \"GZIP\"\n    }\n  },\n  \"target\": {\n    \"type\": \"LOCAL\"\n  }\n}'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/exports/{exportId}": {
+      "get": {
+        "summary": "Get details of an export task",
+        "operationId": "ExportService_GetExport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Export"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "exportId",
+            "description": "The ID of the export task to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Export"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/exports/{export_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete an export task",
+        "operationId": "ExportService_DeleteExport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Export"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "exportId",
+            "description": "The ID of the export task to delete.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Export"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request DELETE 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/exports/{export_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/exports/{exportId}:cancel": {
+      "post": {
+        "summary": "Cancel an export task",
+        "operationId": "ExportService_CancelExport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Export"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "exportId",
+            "description": "The ID of the export task to cancel.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Export"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request POST 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/exports/{export_id}:cancel' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/imports": {
+      "get": {
+        "summary": "List import tasks for a cluster",
+        "operationId": "ImportService_ListImports",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1ListImportsResponse"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster to list import tasks for.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageToken",
+            "description": "The pagination token received from a previous [List import tasks](#tag/Import/operation/ImportService_ListImports) request. Use this token to retrieve the next page of results.\n\n**Note**: When paginating, all other parameters must match the original request.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "The maximum number of import tasks to return. If not specified, at most 10 import tasks will be returned. The maximum value is `100`. Values greater than `100` are set to `100`.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "maximum": 100,
+            "minimum": 1
+          },
+          {
+            "name": "orderBy",
+            "description": "Specifies the sorting order of results. Use a comma-separated list of field names, optionally appending `desc` for descending order. For example, `createTime desc`. By default, fields are sorted in ascending order.\n\nSupported field: `createTime`.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Import"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/imports' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create an import task",
+        "operationId": "ImportService_CreateImport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Import"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the target cluster where data will be imported.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ImportServiceCreateImportBody"
+            }
+          }
+        ],
+        "tags": [
+          "Import"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/imports' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Content-Type: application/json' \\\n--header 'Accept: application/json' \\\n--data '{\n  \"importOptions\": {\n    \"fileType\": \"SQL\"\n  },\n  \"source\": {\n    \"type\": \"S3\",\n    \"s3\": {\n      \"uri\": \"s3://tidbcloud-sample-data/data-ingestion/\",\n      \"authType\": \"ROLE_ARN\",\n      \"roleArn\": \"arn:aws:iam::801626783489:role/import-sample-access\"\n    }\n  }\n}'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/imports/{id}": {
+      "get": {
+        "summary": "Get details of an import task",
+        "operationId": "ImportService_GetImport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1beta1Import"
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "description": "The ID of the import task.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Import"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/imports/{import_id}' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    },
+    "/clusters/{clusterId}/imports/{id}:cancel": {
+      "post": {
+        "summary": "Cancel an import task",
+        "operationId": "ImportService_CancelImport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "400": {
+            "description": "A request field is invalid.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "401": {
+            "description": "The API key cannot be authenticated.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "403": {
+            "description": "The API key does not have permission to access the resource.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "429": {
+            "description": "You have exceed the rate limit.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "description": "The ID of the cluster.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "description": "The ID of the import task.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Import"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "curl",
+            "lang": "cURL",
+            "source": "curl --location --request POST 'https://serverless.tidbapi.com/v1beta1/clusters/{cluster_id}/imports/{import_id}:cancel' \\\n--digest --user 'YOUR_PUBLIC_KEY:YOUR_PRIVATE_KEY' \\\n--header 'Accept: application/json'"
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ClusterSpendingLimit": {
+      "type": "object",
+      "properties": {
+        "monthly": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The maximum spending limit for the cluster per month, in USD cents."
+        }
+      },
+      "description": "Message for spending limit configuration."
+    },
+    "ExportOptionsFilterTable": {
+      "type": "object",
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of [table-filter](https://docs.pingcap.com/tidb/stable/table-filter/#syntax) patterns."
+        },
+        "where": {
+          "type": "string",
+          "description": "Filters the exported tables with the `WHERE` condition."
+        }
+      }
+    },
+    "ExportOptionsParquetFormat": {
+      "type": "object",
+      "properties": {
+        "compression": {
+          "description": "The Parquet compression algorithm.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportParquetCompressionTypeEnum"
+            }
+          ]
+        }
+      }
+    },
+    "ExportServiceCreateExportBody": {
+      "type": "object",
+      "properties": {
+        "exportOptions": {
+          "description": "The configuration options for the export task.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportOptions"
+            }
+          ]
+        },
+        "target": {
+          "description": "The destination configuration for where the exported data is stored.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportTarget"
+            }
+          ]
+        },
+        "displayName": {
+          "type": "string",
+          "default": "SNAPSHOT_{snapshot_time}",
+          "description": "The display name of the export task."
+        }
+      }
+    },
+    "ImportServiceCreateImportBody": {
+      "type": "object",
+      "properties": {
+        "importOptions": {
+          "description": "The configuration options for the import task.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportOptions"
+            }
+          ]
+        },
+        "source": {
+          "description": "The data source for the import task.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportSource"
+            }
+          ]
+        }
+      },
+      "required": [
+        "importOptions",
+        "source"
+      ]
+    },
+    "PrivateALICLOUD": {
+      "type": "object",
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "description": "The Alibaba Cloud service name for private access.",
+          "readOnly": true
+        },
+        "availabilityZone": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of availability zones where the service is available.",
+          "readOnly": true
+        }
+      },
+      "description": "The [Alibaba Cloud PrivateLink](https://www.alibabacloud.com/help/en/privatelink/product-overview/what-is-a-private-network-connection) configuration for private access."
+    },
+    "commonv1beta1ClusterState": {
+      "type": "string",
+      "enum": [
+        "CREATING",
+        "ACTIVE",
+        "RESTORING",
+        "DELETED"
+      ],
+      "description": "Enum of possible states of a cluster.\n\n - CREATING: Cluster is being created.\n - ACTIVE: Cluster is active for use.\n - RESTORING: Cluster data is being restored.\n - DELETED: Cluster has been deleted."
+    },
+    "commonv1beta1Region": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "regions/aws-us-west-2",
+          "description": "The unique name of the region, in the format of `regions/{region_id}`. For example, `regions/aws-us-west-2`.",
+          "pattern": "^regions/(aws|alicloud)-(.+)$"
+        },
+        "regionId": {
+          "type": "string",
+          "example": "aws-us-west-2",
+          "description": "The unique identifier of the region, in the format of `{cloud_provider}-{region_code}`. For example, `aws-us-west-2`.",
+          "readOnly": true,
+          "pattern": "^(aws|alicloud)-[a-z0-9-]+$"
+        },
+        "cloudProvider": {
+          "example": "aws",
+          "description": "The cloud provider that offers the region.\n\n- `\"aws\"`: Amazon Web Services\n\n- `\"alicloud\"`: Alibaba Cloud",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1RegionCloudProvider"
+            }
+          ]
+        },
+        "displayName": {
+          "type": "string",
+          "example": "Oregon (us-west-2)",
+          "description": "A human-readable name for the region. For example, `Oregon (us-west-2)`.",
+          "readOnly": true
+        },
+        "provider": {
+          "type": "string",
+          "x-nullable": true,
+          "example": "aws",
+          "description": "**Deprecated.** Use `cloudProvider` instead. The name of the cloud provider. For example, `aws` or `alicloud`.",
+          "readOnly": true
+        },
+        "servicePlans": {
+          "type": "array",
+          "example": [
+            "Starter",
+            "Essential"
+          ],
+          "items": {
+            "$ref": "#/definitions/commonv1beta1ServicePlan"
+          },
+          "description": "The plan of the service.\n\n- `Starter`: [TiDB Cloud Starter](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#tidb-cloud-serverless)\n- `Essential`: [TiDB Cloud Essential](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#essential)",
+          "readOnly": true
+        }
+      },
+      "description": "A representation of a region for deploying TiDB clusters."
+    },
+    "commonv1beta1ServicePlan": {
+      "type": "string",
+      "enum": [
+        "Starter",
+        "Essential"
+      ]
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The error code returned with this error."
+        },
+        "message": {
+          "type": "string",
+          "description": "The error message returned with this error."
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          },
+          "description": "A list of messages with additional error details."
+        }
+      },
+      "description": "The `Status` type defines a logical error model that is suitable for\ndifferent programming environments, including REST APIs and RPC APIs. It is\nused by [gRPC](https://github.com/grpc). Each `Status` message contains\nthree pieces of data: error code, error message, and error details.\n\nYou can find out more about this error model and how to work with it in the\n[API Design Guide](https://cloud.google.com/apis/design/errors)."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL or resource name that uniquely identifies the type of the serialized protocol buffer message."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "serverlessv1beta1ClusterHighAvailabilityType": {
+      "type": "string",
+      "enum": [
+        "ZONAL",
+        "REGIONAL"
+      ],
+      "description": "The high availability configuration for the cluster.\n\n- `ZONAL`: high availability within a single availability zone. For more information, see [Zonal high availability architecture](https://docs.pingcap.com/tidbcloud/serverless-high-availability/#zonal-high-availability-architecture).\n- `REGIONAL`: high availability across multiple availability zones within a region. For more information, see [Regional high availability architecture](https://docs.pingcap.com/tidbcloud/serverless-high-availability/#regional-high-availability-architecture)."
+    },
+    "tidb_cloud_open_apiserverlessv1beta1Cluster": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The unique identifier for the TiDB cluster, which is generated by the API and follows the format `clusters/{clusterId}`.",
+          "readOnly": true
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "The ID of the cluster.",
+          "readOnly": true
+        },
+        "displayName": {
+          "type": "string",
+          "example": "foo-bar",
+          "description": "The user-defined name of the cluster.",
+          "maxLength": 64,
+          "minLength": 4,
+          "pattern": "^[A-Za-z0-9][-A-Za-z0-9]{2,62}[A-Za-z0-9]$"
+        },
+        "region": {
+          "description": "The region where the cluster is deployed.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/commonv1beta1Region"
+            }
+          ]
+        },
+        "spendingLimit": {
+          "description": "The [spending limit](https://docs.pingcap.com/tidbcloud/tidb-cloud-glossary/#spending-limit) for the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ClusterSpendingLimit"
+            }
+          ]
+        },
+        "automatedBackupPolicy": {
+          "description": "The schedule and retention rules for automated database backups.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterAutomatedBackupPolicy"
+            }
+          ]
+        },
+        "endpoints": {
+          "description": "The connection endpoints for accessing the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEndpoints"
+            }
+          ]
+        },
+        "rootPassword": {
+          "type": "string",
+          "example": "my-shining-password",
+          "description": "The root password of the cluster. It must be between 8 and 64 characters long and can contain letters, numbers, and special characters.",
+          "maxLength": 64,
+          "minLength": 8,
+          "pattern": "^.{8,64}$"
+        },
+        "encryptionConfig": {
+          "description": "The data encryption settings for the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEncryptionConfig"
+            }
+          ]
+        },
+        "highAvailabilityType": {
+          "$ref": "#/definitions/serverlessv1beta1ClusterHighAvailabilityType"
+        },
+        "version": {
+          "type": "string",
+          "description": "The TiDB version of the cluster.",
+          "readOnly": true
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The email address of the user who create the cluster.",
+          "readOnly": true
+        },
+        "userPrefix": {
+          "type": "string",
+          "description": "The unique prefix automatically generated for SQL usernames on this cluster. TiDB Cloud uses this prefix to distinguish between clusters. For more information, see [User name prefix](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#user-name-prefix).",
+          "readOnly": true
+        },
+        "state": {
+          "description": "The current state of the cluster.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/commonv1beta1ClusterState"
+            }
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The labels for the cluster.\n\n- `tidb.cloud/organization`: the ID of the organization where the cluster belongs.\n- `tidb.cloud/project`: the ID of the project where the cluster belongs."
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The annotations for the cluster. The following lists some predefined annotations.\n\n- `tidb.cloud/has-set-password`: indicates whether the cluster has a root password set.\n- `tidb.cloud/available-features`: lists available features of the cluster.",
+          "readOnly": true
+        },
+        "createTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the cluster was created, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "updateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the cluster was last updated, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "autoScaling": {
+          "description": "The auto-scaling configuration for the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterAutoScaling"
+            }
+          ]
+        },
+        "servicePlan": {
+          "description": "The plan of the service.\n\n- `Starter`: [TiDB Cloud Starter](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#tidb-cloud-serverless)\n- `Essential`: [TiDB Cloud Essential](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#essential)",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/commonv1beta1ServicePlan"
+            }
+          ]
+        }
+      },
+      "description": "Message for a TiDB Cloud Starter or Essential cluster.",
+      "required": [
+        "displayName",
+        "region"
+      ]
+    },
+    "tidb_cloud_open_apiserverlessv1beta1ListClustersResponse": {
+      "type": "object",
+      "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/tidb_cloud_open_apiserverlessv1beta1Cluster"
+          },
+          "description": "A list of clusters that match the query."
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "The token to retrieve the next page of results. Use this value as the `pageToken` parameter in the next request. This field is empty when there are no more pages."
+        },
+        "totalSize": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The total number of clusters that match the query."
+        }
+      },
+      "description": "Responses message to the request for listing of TiDB Cloud Starter and Essential clusters."
+    },
+    "tidb_cloud_open_apiserverlessv1beta1ListRegionsResponse": {
+      "type": "object",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/commonv1beta1Region"
+          },
+          "description": "A list of available regions."
+        }
+      },
+      "description": "Responses message to the request for listing of available regions in TiDB Cloud Starter and Essential."
+    },
+    "v1beta1AzureBlobSource": {
+      "type": "object",
+      "properties": {
+        "authType": {
+          "description": "The authentication method for accessing the Azure Blob Storage source.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportAzureBlobAuthTypeEnum"
+            }
+          ]
+        },
+        "sasToken": {
+          "type": "string",
+          "description": "The Shared Access Signature (SAS) token for accessing the Azure Blob Storage source."
+        },
+        "uri": {
+          "type": "string",
+          "description": "The Azure Blob Storage URI of the import source, in the format of `azure://\u003caccount\u003e.blob.core.windows.net/\u003ccontainer\u003e/\u003cpath\u003e` or `https://\u003caccount\u003e.blob.core.windows.net/\u003ccontainer\u003e/\u003cpath\u003e`."
+        }
+      },
+      "required": [
+        "authType",
+        "uri"
+      ]
+    },
+    "v1beta1AzureBlobTarget": {
+      "type": "object",
+      "properties": {
+        "authType": {
+          "description": "The authentication method for accessing Azure Blob Storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportAzureBlobAuthTypeEnum"
+            }
+          ]
+        },
+        "sasToken": {
+          "type": "string",
+          "description": "The Shared Access Signature (SAS) token for accessing Azure Blob Storage."
+        },
+        "uri": {
+          "type": "string",
+          "description": "The Azure Blob URI of the export target, in the format of `azure://\u003caccount\u003e.blob.core.windows.net/\u003ccontainer\u003e/\u003cpath\u003e` or `https://\u003caccount\u003e.blob.core.windows.net/\u003ccontainer\u003e/\u003cpath\u003e`."
+        }
+      },
+      "required": [
+        "authType",
+        "uri"
+      ]
+    },
+    "v1beta1Branch": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The unique identifier for the branch.",
+          "readOnly": true
+        },
+        "branchId": {
+          "type": "string",
+          "description": "The system-generated ID of the branch.",
+          "readOnly": true
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user-defined name of the branch."
+        },
+        "rootPassword": {
+          "type": "string",
+          "example": "my-shining-password",
+          "description": "The root password of the cluster. It must be between 8 and 64 characters long and can contain letters, numbers, and special characters.",
+          "maxLength": 64,
+          "minLength": 8,
+          "pattern": "^.{8,64}$"
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "The ID of the cluster to which the branch belongs.",
+          "readOnly": true
+        },
+        "parentId": {
+          "type": "string",
+          "description": "The ID of the branch parent."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The email address of the user who create the branch.",
+          "readOnly": true
+        },
+        "state": {
+          "description": "The state of the branch.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1BranchState"
+            }
+          ]
+        },
+        "endpoints": {
+          "description": "The connection endpoints for accessing the branch.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1BranchEndpoints"
+            }
+          ]
+        },
+        "userPrefix": {
+          "type": "string",
+          "x-nullable": true,
+          "description": "The unique prefix automatically generated for SQL usernames on this cluster. TiDB Cloud uses this prefix to distinguish between clusters. For more information, see [User name prefix](https://docs.pingcap.com/tidbcloud/select-cluster-tier/#user-name-prefix).",
+          "readOnly": true
+        },
+        "createTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the branch was created, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "updateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the branch was last updated, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The annotations for the branch."
+        },
+        "parentDisplayName": {
+          "type": "string",
+          "description": "The display name of the parent branch from which the branch was created.",
+          "readOnly": true
+        },
+        "parentTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The point in time on the parent branch from which the branch is created. The timestamp is truncated to seconds without rounding."
+        }
+      },
+      "description": "Message for branch.",
+      "required": [
+        "displayName"
+      ]
+    },
+    "v1beta1BranchEndpoints": {
+      "type": "object",
+      "properties": {
+        "public": {
+          "description": "The public endpoint configuration for connecting to the branch.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1BranchEndpointsPublic"
+            }
+          ]
+        },
+        "private": {
+          "description": "The private endpoint for securely connecting to the branch.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1BranchEndpointsPrivate"
+            }
+          ]
+        }
+      },
+      "description": "Message for the Endpoints for this branch."
+    },
+    "v1beta1BranchEndpointsPrivate": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "The hostname of the private endpoint.",
+          "readOnly": true
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The port number of the private endpoint.",
+          "readOnly": true
+        },
+        "aws": {
+          "description": "The [AWS PrivateLink](https://aws.amazon.com/privatelink/) configuration details for private access.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1BranchEndpointsPrivateAWS"
+            }
+          ]
+        }
+      },
+      "description": "Message for Private Endpoint for this branch."
+    },
+    "v1beta1BranchEndpointsPrivateAWS": {
+      "type": "object",
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "description": "The AWS service name for private access.",
+          "readOnly": true
+        },
+        "availabilityZone": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of availability zones where the service is available.",
+          "readOnly": true
+        }
+      },
+      "description": "Message for AWS Private Link Service."
+    },
+    "v1beta1BranchEndpointsPublic": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "The hostname of the public endpoint.",
+          "readOnly": true
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The port number of the public endpoint.",
+          "readOnly": true
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Indicates whether the public endpoint is disabled."
+        },
+        "authorizedNetworks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1BranchEndpointsPublicAuthorizedNetwork"
+          },
+          "description": "The list of networks that are allowed to connect to the branch.",
+          "readOnly": true
+        }
+      },
+      "description": "Message for Public Endpoint for this branch."
+    },
+    "v1beta1BranchEndpointsPublicAuthorizedNetwork": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the authorized network."
+        },
+        "startIpAddress": {
+          "type": "string",
+          "description": "The starting IP address of the authorized network range."
+        },
+        "endIpAddress": {
+          "type": "string",
+          "description": "The ending IP address of the authorized network range."
+        }
+      }
+    },
+    "v1beta1BranchState": {
+      "type": "string",
+      "enum": [
+        "CREATING",
+        "ACTIVE",
+        "DELETED",
+        "RESTORING"
+      ],
+      "description": "Branch State.\n\n - CREATING: The branch is creating.\n - ACTIVE: The branch is active and running.\n - DELETED: The branch is deleted.\n - RESTORING: The branch is restoring."
+    },
+    "v1beta1BranchViewEnum": {
+      "type": "string",
+      "enum": [
+        "BASIC",
+        "FULL"
+      ]
+    },
+    "v1beta1ClusterAutoScaling": {
+      "type": "object",
+      "properties": {
+        "minRcu": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The minimum number of Request Capacity Units (RCUs) for auto-scaling."
+        },
+        "maxRcu": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The maximum number of Request Capacity Units (RCUs) for auto-scaling."
+        }
+      },
+      "description": "Message for auto scaling configuration."
+    },
+    "v1beta1ClusterAutomatedBackupPolicy": {
+      "type": "object",
+      "properties": {
+        "startTime": {
+          "type": "string",
+          "description": "The UTC time of day in `HH:mm` format when the automated backup starts."
+        },
+        "retentionDays": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The number of days to retain automated backups."
+        }
+      },
+      "description": "Message for automated backup configuration for a cluster."
+    },
+    "v1beta1ClusterEncryptionConfig": {
+      "type": "object",
+      "properties": {
+        "enhancedEncryptionEnabled": {
+          "type": "boolean",
+          "description": "Indicates whether enhanced encryption for cluster data is enabled."
+        }
+      },
+      "description": "Message for encryption settings for a cluster."
+    },
+    "v1beta1ClusterEndpoints": {
+      "type": "object",
+      "properties": {
+        "public": {
+          "description": "The public endpoint configuration for connecting to the cluster. For more information, see [Network](https://docs.pingcap.com/tidbcloud/connect-to-tidb-cluster-serverless/#network).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEndpointsPublic"
+            }
+          ]
+        },
+        "private": {
+          "description": "The private endpoint for securely connecting to the cluster. For more information, see [Network](https://docs.pingcap.com/tidbcloud/connect-to-tidb-cluster-serverless/#network).",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEndpointsPrivate"
+            }
+          ]
+        }
+      },
+      "description": "Message for endpoint information for connecting to a cluster."
+    },
+    "v1beta1ClusterEndpointsPrivate": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "The hostname of the private endpoint.",
+          "readOnly": true
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The port number of the private endpoint.",
+          "readOnly": true
+        },
+        "aws": {
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEndpointsPrivateAWS"
+            }
+          ]
+        },
+        "alicloud": {
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/PrivateALICLOUD"
+            }
+          ]
+        }
+      },
+      "description": "Message for private endpoint to securely connect to the cluster."
+    },
+    "v1beta1ClusterEndpointsPrivateAWS": {
+      "type": "object",
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "description": "The AWS service name for private access.",
+          "readOnly": true
+        },
+        "availabilityZone": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of availability zones where the service is available.",
+          "readOnly": true
+        }
+      },
+      "description": "The [AWS PrivateLink](https://aws.amazon.com/privatelink/) configuration details for private access."
+    },
+    "v1beta1ClusterEndpointsPublic": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "The hostname of the public endpoint.",
+          "readOnly": true
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The port number of the public endpoint.",
+          "readOnly": true
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Indicates whether the public endpoint is disabled."
+        },
+        "authorizedNetworks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1ClusterEndpointsPublicAuthorizedNetwork"
+          },
+          "description": "The list of networks that are allowed to connect to the cluster."
+        }
+      },
+      "description": "Message for public endpoint to connect to the cluster."
+    },
+    "v1beta1ClusterEndpointsPublicAuthorizedNetwork": {
+      "type": "object",
+      "properties": {
+        "startIpAddress": {
+          "type": "string",
+          "description": "The starting IP address of the authorized network range."
+        },
+        "endIpAddress": {
+          "type": "string",
+          "description": "The ending IP address of the authorized network range."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the authorized network."
+        }
+      },
+      "required": [
+        "startIpAddress",
+        "endIpAddress",
+        "displayName"
+      ]
+    },
+    "v1beta1ClusterServicePartialUpdateClusterBody": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "type": "string",
+              "description": "The user-defined name of the cluster."
+            },
+            "spendingLimit": {
+              "description": "The [spending limit](https://docs.pingcap.com/tidbcloud/tidb-cloud-glossary/#spending-limit) for the cluster.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ClusterSpendingLimit"
+                }
+              ]
+            },
+            "automatedBackupPolicy": {
+              "description": "The schedule and retention rules for automated database backups.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/v1beta1ClusterAutomatedBackupPolicy"
+                }
+              ]
+            },
+            "endpoints": {
+              "description": "The connection endpoints for accessing the cluster.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/v1beta1ClusterEndpoints"
+                }
+              ]
+            },
+            "labels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "The labels for the cluster.\n\n- `tidb.cloud/organization`: the ID of the organization where the cluster belongs.\n- `tidb.cloud/project`: the ID of the project where the cluster belongs."
+            },
+            "autoScaling": {
+              "description": "The auto-scaling configuration for the cluster.",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/v1beta1ClusterAutoScaling"
+                }
+              ]
+            }
+          },
+          "description": "The updated cluster configuration."
+        },
+        "updateMask": {
+          "type": "string",
+          "description": "Specifies which fields to update in the cluster."
+        }
+      },
+      "description": "Message for requesting a partial update on a TiDB Cloud Starter or Essential cluster.",
+      "required": [
+        "updateMask"
+      ]
+    },
+    "v1beta1ClusterViewEnum": {
+      "type": "string",
+      "enum": [
+        "BASIC",
+        "FULL"
+      ]
+    },
+    "v1beta1CreationDetails": {
+      "type": "object",
+      "properties": {
+        "importOptions": {
+          "description": "The configuration options for the import task.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportOptions"
+            }
+          ]
+        },
+        "source": {
+          "description": "The data source for the import task.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportSource"
+            }
+          ]
+        }
+      }
+    },
+    "v1beta1Export": {
+      "type": "object",
+      "properties": {
+        "exportId": {
+          "type": "string",
+          "description": "The unique ID of the export task.",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "description": "The unique identifier for the export task.",
+          "readOnly": true
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "The ID of the cluster to which the export task belongs."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The email address of the user who create the export task.",
+          "readOnly": true
+        },
+        "state": {
+          "description": "The state of the export task.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportStateEnum"
+            }
+          ]
+        },
+        "exportOptions": {
+          "description": "The configuration options for the export task.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportOptions"
+            }
+          ]
+        },
+        "target": {
+          "description": "The destination configuration for where the exported data is stored.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportTarget"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "x-nullable": true,
+          "description": "An error message if the export task failed. Otherwise, empty.",
+          "readOnly": true
+        },
+        "displayName": {
+          "type": "string",
+          "default": "SNAPSHOT_{snapshot_time}",
+          "description": "The display name of the export task."
+        },
+        "createTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the export task was created, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "updateTime": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The timestamp when the export task was last updated, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "completeTime": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The timestamp when the export task was completed, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "snapshotTime": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The timestamp when the data snapshot was captured for this export.",
+          "readOnly": true
+        },
+        "expireTime": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The timestamp when the export will expire and become unavailable.",
+          "readOnly": true
+        }
+      },
+      "description": "Message for export task.",
+      "required": [
+        "clusterId"
+      ]
+    },
+    "v1beta1ExportAzureBlobAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "SAS_TOKEN"
+      ],
+      "description": " - SAS_TOKEN: The access method is sas token."
+    },
+    "v1beta1ExportCompressionTypeEnum": {
+      "type": "string",
+      "enum": [
+        "GZIP",
+        "SNAPPY",
+        "ZSTD",
+        "NONE"
+      ],
+      "default": "GZIP",
+      "description": " - GZIP: Gzip compression.\n - SNAPPY: Snappy compression.\n - ZSTD: Zstd compression.\n - NONE: No compression."
+    },
+    "v1beta1ExportFileTypeEnum": {
+      "type": "string",
+      "enum": [
+        "SQL",
+        "CSV",
+        "PARQUET"
+      ],
+      "default": "CSV",
+      "description": " - SQL: SQL type.\n - CSV: CSV type.\n - PARQUET: PARQUET type."
+    },
+    "v1beta1ExportGcsAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "SERVICE_ACCOUNT_KEY"
+      ],
+      "description": " - SERVICE_ACCOUNT_KEY: The access method is service account key."
+    },
+    "v1beta1ExportOSSAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "ACCESS_KEY"
+      ],
+      "description": " - ACCESS_KEY: The access method is access key."
+    },
+    "v1beta1ExportOptions": {
+      "type": "object",
+      "properties": {
+        "fileType": {
+          "description": "The export file type.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportFileTypeEnum"
+            }
+          ]
+        },
+        "compression": {
+          "description": "The compression algorithm of the export file.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportCompressionTypeEnum"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Defines which tables to include in the export. If not specified, all tables in the cluster are exported.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportOptionsFilter"
+            }
+          ]
+        },
+        "csvFormat": {
+          "description": "The format specification for the CSV file.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportOptionsCSVFormat"
+            }
+          ]
+        },
+        "parquetFormat": {
+          "description": "The format specification for the Parquet file.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ExportOptionsParquetFormat"
+            }
+          ]
+        }
+      }
+    },
+    "v1beta1ExportOptionsCSVFormat": {
+      "type": "object",
+      "properties": {
+        "separator": {
+          "type": "string",
+          "default": ",",
+          "description": "The character used to separate values in the CSV file.\nIt is recommended to use uncommon separators like `|+|` to avoid conflicts."
+        },
+        "delimiter": {
+          "type": "string",
+          "default": "\"",
+          "x-nullable": true,
+          "description": "The character used to enclose string values in the CSV file."
+        },
+        "nullValue": {
+          "type": "string",
+          "default": "\\N",
+          "x-nullable": true,
+          "description": "The string representation of NULL values in the CSV file."
+        },
+        "skipHeader": {
+          "type": "boolean",
+          "default": false,
+          "description": "Indicates whether to omit the header row in exported CSV files."
+        }
+      }
+    },
+    "v1beta1ExportOptionsFilter": {
+      "type": "object",
+      "properties": {
+        "sql": {
+          "type": "string",
+          "description": "Filters the exported data with the SQL statement."
+        },
+        "table": {
+          "description": "Filters the exported data with table filter patterns.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ExportOptionsFilterTable"
+            }
+          ]
+        }
+      }
+    },
+    "v1beta1ExportParquetCompressionTypeEnum": {
+      "type": "string",
+      "enum": [
+        "GZIP",
+        "SNAPPY",
+        "ZSTD",
+        "NONE"
+      ],
+      "default": "ZSTD",
+      "description": " - GZIP: The parquet compression type is GZIP.\n - SNAPPY: The parquet compression type is SNAPPY.\n - ZSTD: The parquet compression type is ZSTD.\n - NONE: No compression."
+    },
+    "v1beta1ExportS3AuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "ROLE_ARN",
+        "ACCESS_KEY"
+      ],
+      "description": " - ROLE_ARN: The access method is role arn.\n - ACCESS_KEY: The access method is access key."
+    },
+    "v1beta1ExportStateEnum": {
+      "type": "string",
+      "enum": [
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELED",
+        "DELETED",
+        "EXPIRED"
+      ],
+      "description": "Export State.\n\n - RUNNING: The export task is being created.\n - SUCCEEDED: The export task is success.\n - FAILED: The export task is failed.\n - CANCELED: The export task is canceled.\n - DELETED: The export task is deleted.\n - EXPIRED: The export is expired, only local export will be expired."
+    },
+    "v1beta1ExportTarget": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The export target.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportTargetTypeEnum"
+            }
+          ]
+        },
+        "s3": {
+          "description": "The configuration details for exporting data to Amazon S3. This is required when `type` is `S3`.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3Target"
+            }
+          ]
+        },
+        "gcs": {
+          "description": "The configuration details for exporting data to Google Cloud Storage. This is required when `type` is `GCS`.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1GCSTarget"
+            }
+          ]
+        },
+        "azureBlob": {
+          "description": "The configuration details for exporting data to Azure Blob Storage. This is required when `type` is `AZURE_BLOB`.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1AzureBlobTarget"
+            }
+          ]
+        },
+        "oss": {
+          "description": "The configuration details for exporting data to Alibaba Cloud Object Storage Service (OSS). This is required when `type` is `OSS`.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1OSSTarget"
+            }
+          ]
+        }
+      }
+    },
+    "v1beta1ExportTargetTypeEnum": {
+      "type": "string",
+      "enum": [
+        "LOCAL",
+        "S3",
+        "GCS",
+        "AZURE_BLOB",
+        "OSS"
+      ],
+      "default": "LOCAL",
+      "description": " - LOCAL: Local target.\n - S3: S3 target.\n - GCS: gcs target.\n - AZURE_BLOB: azure blob target.\n - OSS: OSS target."
+    },
+    "v1beta1GCSSource": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The Google Cloud Storage URI of the import source."
+        },
+        "authType": {
+          "description": "The authentication method for accessing the Google Cloud Storage source.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportGcsAuthTypeEnum"
+            }
+          ]
+        },
+        "serviceAccountKey": {
+          "type": "string",
+          "description": "The service account key for accessing the Google Cloud Storage source."
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1GCSTarget": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The Google Cloud Storage URI of the export target."
+        },
+        "authType": {
+          "description": "The authentication method for accessing Google Cloud Storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportGcsAuthTypeEnum"
+            }
+          ]
+        },
+        "serviceAccountKey": {
+          "type": "string",
+          "description": "The service account key for accessing Google Cloud Storage."
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1Import": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "**Deprecated.** Use `importId` instead. The ID of the import task.",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the import task.",
+          "readOnly": true
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "The ID of the target cluster for the import.",
+          "readOnly": true
+        },
+        "totalSize": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The total size of the data to be imported, in bytes.",
+          "readOnly": true
+        },
+        "createTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the import task was created, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "completeTime": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true,
+          "description": "The timestamp when the import task was completed, in the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.",
+          "readOnly": true
+        },
+        "state": {
+          "description": "The state of the import task.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportStateEnum"
+            }
+          ]
+        },
+        "completePercent": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The percentage of import progress, excluding post-processing.",
+          "readOnly": true
+        },
+        "message": {
+          "type": "string",
+          "description": "An error message if the import task failed. Otherwise, empty.",
+          "readOnly": true
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The email address of the user who create the import task.",
+          "readOnly": true
+        },
+        "creationDetails": {
+          "description": "The additional details about how the import task is created.",
+          "readOnly": true,
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1CreationDetails"
+            }
+          ]
+        },
+        "importId": {
+          "type": "string",
+          "description": "The ID of the import task.",
+          "readOnly": true
+        }
+      }
+    },
+    "v1beta1ImportAzureBlobAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "SAS_TOKEN"
+      ],
+      "description": " - SAS_TOKEN: The access method is sas token."
+    },
+    "v1beta1ImportFileTypeEnum": {
+      "type": "string",
+      "enum": [
+        "CSV",
+        "SQL",
+        "AURORA_SNAPSHOT",
+        "PARQUET"
+      ],
+      "description": " - CSV: CSV type.\n - SQL: SQL type.\n - AURORA_SNAPSHOT: Aurora snapshot type.\n - PARQUET: Parquet type."
+    },
+    "v1beta1ImportGcsAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "SERVICE_ACCOUNT_KEY"
+      ],
+      "description": " - SERVICE_ACCOUNT_KEY: The access method is service account key."
+    },
+    "v1beta1ImportOSSAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "ACCESS_KEY"
+      ],
+      "description": " - ACCESS_KEY: The access method is access key."
+    },
+    "v1beta1ImportOptions": {
+      "type": "object",
+      "properties": {
+        "fileType": {
+          "description": "The format of the file to import.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportFileTypeEnum"
+            }
+          ]
+        },
+        "csvFormat": {
+          "description": "The format specification for CSV files.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportOptionsCSVFormat"
+            }
+          ]
+        }
+      },
+      "required": [
+        "fileType"
+      ]
+    },
+    "v1beta1ImportOptionsCSVFormat": {
+      "type": "object",
+      "properties": {
+        "separator": {
+          "type": "string",
+          "default": ",",
+          "description": "The character used to separate values in the CSV file."
+        },
+        "delimiter": {
+          "type": "string",
+          "default": "\"",
+          "x-nullable": true,
+          "description": "The character used to enclose string values in the CSV file."
+        },
+        "header": {
+          "type": "boolean",
+          "default": true,
+          "x-nullable": true,
+          "description": "Indicates whether the CSV file contains column headers in the first row."
+        },
+        "notNull": {
+          "type": "boolean",
+          "default": false,
+          "x-nullable": true,
+          "description": "Indicates whether the columns in the CSV file can be NULL."
+        },
+        "null": {
+          "type": "string",
+          "default": "\\N",
+          "x-nullable": true,
+          "description": "The string representation of NULL values in the CSV file."
+        },
+        "backslashEscape": {
+          "type": "boolean",
+          "default": true,
+          "x-nullable": true,
+          "description": "Indicates whether to escape backslashes in the CSV file."
+        },
+        "trimLastSeparator": {
+          "type": "boolean",
+          "default": false,
+          "x-nullable": true,
+          "description": "Indicates whether to remove trailing separators from each row in the CSV file."
+        }
+      }
+    },
+    "v1beta1ImportS3AuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "ROLE_ARN",
+        "ACCESS_KEY"
+      ],
+      "description": " - ROLE_ARN: The access method is role arn.\n - ACCESS_KEY: The access method is access key."
+    },
+    "v1beta1ImportS3CompatibleAuthTypeEnum": {
+      "type": "string",
+      "enum": [
+        "ACCESS_KEY"
+      ],
+      "description": " - ACCESS_KEY: The access method is access key."
+    },
+    "v1beta1ImportSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The source from which data is imported.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportSourceTypeEnum"
+            }
+          ]
+        },
+        "s3": {
+          "description": "The configuration details for importing from Amazon S3.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3Source"
+            }
+          ]
+        },
+        "gcs": {
+          "description": "The configuration details for importing from Google Cloud Storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1GCSSource"
+            }
+          ]
+        },
+        "azureBlob": {
+          "description": "The configuration details for importing from Azure Blob Storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1AzureBlobSource"
+            }
+          ]
+        },
+        "s3Compatible": {
+          "description": "The configuration details for importing from a S3-compatible storage service.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3CompatibleSource"
+            }
+          ]
+        },
+        "oss": {
+          "description": "The configuration details for importing from Alibaba Cloud Object Storage Service (OSS).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1OSSSource"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "v1beta1ImportSourceTypeEnum": {
+      "type": "string",
+      "enum": [
+        "S3",
+        "GCS",
+        "AZURE_BLOB",
+        "S3_COMPATIBLE",
+        "OSS"
+      ],
+      "description": " - S3: S3 source.\n - GCS: gcs source.\n - AZURE_BLOB: azure blob source.\n - S3_COMPATIBLE: S3 compatible source.\n - OSS: OSS source."
+    },
+    "v1beta1ImportStateEnum": {
+      "type": "string",
+      "enum": [
+        "PREPARING",
+        "IMPORTING",
+        "COMPLETED",
+        "FAILED",
+        "CANCELING",
+        "CANCELED"
+      ],
+      "description": " - PREPARING: The import is preparing.\n - IMPORTING: The import is importing.\n - COMPLETED: The import is completed.\n - FAILED: The import is failed.\n - CANCELING: The import is canceling.\n - CANCELED: The import is canceled."
+    },
+    "v1beta1ListBranchesResponse": {
+      "type": "object",
+      "properties": {
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1Branch"
+          },
+          "description": "A list of branches that match the query."
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "The token to retrieve the next page of results. Use this value as the `pageToken` parameter in the next request. This field is empty when there are no more pages."
+        },
+        "totalSize": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The total number of branches that match the query."
+        }
+      },
+      "description": "Message for response to list branches."
+    },
+    "v1beta1ListExportsResponse": {
+      "type": "object",
+      "properties": {
+        "exports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1Export"
+          },
+          "description": "A list of export tasks that match the query."
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "The token to retrieve the next page of results. Use this value as the `pageToken` parameter in the next request. This field is empty when there are no more pages."
+        },
+        "totalSize": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The total number of exports that match the query."
+        }
+      }
+    },
+    "v1beta1ListImportsResponse": {
+      "type": "object",
+      "properties": {
+        "imports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1beta1Import"
+          },
+          "description": "A list of import tasks that match the query.",
+          "readOnly": true
+        },
+        "totalSize": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The total number of imports that match the query.",
+          "readOnly": true
+        },
+        "nextPageToken": {
+          "type": "string",
+          "description": "The token to retrieve the next page of results. Use this value as the `pageToken` parameter in the next request. This field is empty when there are no more pages.",
+          "readOnly": true
+        }
+      }
+    },
+    "v1beta1OSSSource": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The Alibaba Cloud OSS URI of the import source."
+        },
+        "authType": {
+          "description": "The authentication method for accessing the Alibaba Cloud OSS source.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportOSSAuthTypeEnum"
+            }
+          ]
+        },
+        "accessKey": {
+          "description": "The access key credentials used for accessing the Alibaba Cloud OSS source.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1OSSSourceAccessKey"
+            }
+          ]
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1OSSSourceAccessKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The AccessKey ID for accessing Alibaba Cloud OSS."
+        },
+        "secret": {
+          "type": "string",
+          "description": "The AccessKey secret for accessing Alibaba Cloud OSS."
+        }
+      },
+      "required": [
+        "id",
+        "secret"
+      ]
+    },
+    "v1beta1OSSTarget": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The Alibaba Cloud OSS URI of the export target."
+        },
+        "authType": {
+          "description": "The authentication method for accessing Alibaba Cloud OSS.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportOSSAuthTypeEnum"
+            }
+          ]
+        },
+        "accessKey": {
+          "description": "The Alibaba Cloud OSS access key credentials used for access.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1OSSTargetAccessKey"
+            }
+          ]
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1OSSTargetAccessKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The AccessKey ID for accessing Alibaba Cloud OSS."
+        },
+        "secret": {
+          "type": "string",
+          "description": "The AccessKey secret for accessing Alibaba Cloud OSS."
+        }
+      },
+      "required": [
+        "id",
+        "secret"
+      ]
+    },
+    "v1beta1PartialUpdateClusterRequestPartialUpdateCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string",
+          "description": "The ID of the cluster to update."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user-defined name of the cluster."
+        },
+        "spendingLimit": {
+          "description": "The [spending limit](https://docs.pingcap.com/tidbcloud/tidb-cloud-glossary/#spending-limit) for the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ClusterSpendingLimit"
+            }
+          ]
+        },
+        "automatedBackupPolicy": {
+          "description": "The schedule and retention rules for automated database backups.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterAutomatedBackupPolicy"
+            }
+          ]
+        },
+        "endpoints": {
+          "description": "The connection endpoints for accessing the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterEndpoints"
+            }
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The labels for the cluster.\n\n- `tidb.cloud/organization`: the ID of the organization where the cluster belongs.\n- `tidb.cloud/project`: the ID of the project where the cluster belongs."
+        },
+        "autoScaling": {
+          "description": "The auto-scaling configuration for the cluster.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ClusterAutoScaling"
+            }
+          ]
+        }
+      },
+      "description": "The updated cluster configuration.",
+      "required": [
+        "clusterId"
+      ]
+    },
+    "v1beta1RegionCloudProvider": {
+      "type": "string",
+      "enum": [
+        "aws",
+        "alicloud"
+      ],
+      "description": "Enum of cloud provider names.\n\n - aws: Amazon Web Services.\n - alicloud: Alibaba Cloud"
+    },
+    "v1beta1S3CompatibleSource": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The S3-compatible storage URI of the import source."
+        },
+        "authType": {
+          "description": "The authentication method for accessing the S3-compatible storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportS3CompatibleAuthTypeEnum"
+            }
+          ]
+        },
+        "accessKey": {
+          "description": "The access key credentials used for accessing the S3-compatible storage.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3CompatibleSourceAccessKey"
+            }
+          ]
+        },
+        "endpoint": {
+          "type": "string",
+          "x-nullable": true,
+          "description": "The custom HTTPS endpoint for S3-compatible storage, which is used to connect to non-AWS storage providers, such as Cloudflare.\nMust be a valid HTTPS URL, such as `https://custom-s3.example.com`."
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1S3CompatibleSourceAccessKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The access key ID for accessing the S3-compatible storage."
+        },
+        "secret": {
+          "type": "string",
+          "description": "The secret access key for accessing the S3-compatible storage."
+        }
+      },
+      "required": [
+        "id",
+        "secret"
+      ]
+    },
+    "v1beta1S3Source": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The S3 URI of the import source."
+        },
+        "authType": {
+          "description": "The authentication method for accessing the S3 bucket.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ImportS3AuthTypeEnum"
+            }
+          ]
+        },
+        "roleArn": {
+          "type": "string",
+          "description": "The AWS IAM role ARN used for access."
+        },
+        "accessKey": {
+          "description": "The AWS access key credentials used for access.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3SourceAccessKey"
+            }
+          ]
+        }
+      },
+      "required": [
+        "uri",
+        "authType"
+      ]
+    },
+    "v1beta1S3SourceAccessKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The access key ID for accessing the S3 source."
+        },
+        "secret": {
+          "type": "string",
+          "description": "The secret access key for accessing the S3 source."
+        }
+      },
+      "required": [
+        "id",
+        "secret"
+      ]
+    },
+    "v1beta1S3Target": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "The S3 URI of the export target."
+        },
+        "authType": {
+          "description": "The authentication method for accessing the S3 bucket.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1ExportS3AuthTypeEnum"
+            }
+          ]
+        },
+        "accessKey": {
+          "description": "The AWS access key credentials used for access.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/v1beta1S3TargetAccessKey"
+            }
+          ]
+        },
+        "roleArn": {
+          "type": "string",
+          "description": "The AWS IAM role ARN used for access."
+        }
+      },
+      "required": [
+        "authType"
+      ]
+    },
+    "v1beta1S3TargetAccessKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The access key ID for accessing the S3 bucket."
+        },
+        "secret": {
+          "type": "string",
+          "description": "The secret access key for accessing the S3 bucket."
+        }
+      },
+      "required": [
+        "id",
+        "secret"
+      ]
+    }
+  }
+}

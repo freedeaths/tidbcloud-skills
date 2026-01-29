@@ -1,0 +1,44 @@
+name: TiDB Cloud Serverless
+version: v1beta1
+
+# HTTP API Configuration
+connection:
+  host: ${TIDBCLOUD_HOST:-serverless.tidbapi.com}
+  base_path: ${TIDBCLOUD_BASE_PATH:-/v1beta1}
+  auth:
+    type: digest
+    env_vars:
+      private_key: TIDB_PRIVATE_KEY
+      public_key: TIDB_PUBLIC_KEY
+
+# OpenAPI spec for HTTP requests
+specs:
+  openapi: openapi.json
+
+# Preset variables
+preset_variables:
+  project_id: ${TIDBCLOUD_PROJECT_ID:-}
+
+# Available CLI tools (Serverless mainly uses mysqlsh for DB operations)
+cli_tools:
+  mysqlsh:
+    description: MySQL Shell for database operations
+    explore_hints:
+      - "mysqlsh --help"
+    common_operations:
+      - "\\sql SELECT 1"
+      - "\\sql SHOW DATABASES"
+      - "\\js shell.status()"
+
+# Execution settings
+execution:
+  mode: auto
+  auto_mode:
+    checkpoint_operations:
+      - ".*Create.*"
+      - ".*Delete.*"
+    confidence_threshold: 0.7
+    max_silent_steps: 10
+    polling:
+      max_retries: 6
+      delay_seconds: 10  # Serverless is faster
