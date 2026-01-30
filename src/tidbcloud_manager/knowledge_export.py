@@ -8,7 +8,7 @@ from typing import Any
 
 import yaml
 
-from .runtime import resolve_skill_root
+from .runtime import canonical_sut_name, resolve_skill_root
 
 
 _RE_LONG_NUMBER = re.compile(r"\b\d{6,}\b")
@@ -73,6 +73,7 @@ def export_knowledge(
     from_dir: Path | None = None,
     min_occurrences: int = 2,
 ) -> dict:
+    sut_name = canonical_sut_name(sut_name)
     knowledge_dir = from_dir or (Path.home() / ".tidbcloud-manager" / "knowledge" / sut_name)
     pitfalls_src = _read_yaml(knowledge_dir / "pitfalls.yaml").get("pitfalls", []) or []
     patterns_src = _read_yaml(knowledge_dir / "patterns.yaml").get("patterns", []) or []
@@ -142,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     exp = sub.add_parser("export", help="Export local knowledge (~/.tidbcloud-manager/knowledge) to repo YAML")
-    exp.add_argument("--sut", required=True, dest="sut_name", help="SUT name (e.g. tidbcloud_serverless)")
+    exp.add_argument("--sut", required=True, dest="sut_name", help="SUT name (e.g. tidbx)")
     exp.add_argument(
         "--out",
         dest="out",
@@ -160,14 +161,15 @@ def main(argv: list[str] | None = None) -> int:
     ns = parser.parse_args(argv)
 
     if ns.cmd == "export":
+        sut_name = canonical_sut_name(ns.sut_name)
         skill_root = resolve_skill_root()
-        out_path = Path(ns.out) if ns.out else (skill_root / "configs" / ns.sut_name / "knowledge.yaml")
+        out_path = Path(ns.out) if ns.out else (skill_root / "configs" / sut_name / "knowledge.yaml")
         if not out_path.is_absolute():
             out_path = (Path.cwd() / out_path).resolve()
 
         from_dir = Path(ns.from_dir).expanduser().resolve() if ns.from_dir else None
         result = export_knowledge(
-            sut_name=ns.sut_name,
+            sut_name=sut_name,
             out_path=out_path,
             from_dir=from_dir,
             min_occurrences=int(ns.min_occurrences),
@@ -176,4 +178,3 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     return 1
-

@@ -27,11 +27,11 @@ from typing import Any, Optional
 
 import yaml
 
-from .runtime import expand_env_vars, load_dotenv_from, resolve_skill_root
+from .runtime import canonical_sut_name, expand_env_vars, load_dotenv_from, resolve_skill_root
 from .secure_executor import ExecutionResult, SecureExecutor
 
 
-_SENSITIVE_KEY_RE = re.compile(r"(password|private[_-]?key|token|secret)", re.IGNORECASE)
+_SENSITIVE_KEY_RE = re.compile(r"(password|private[_-]?key|token|secret|pwd)", re.IGNORECASE)
 _PLACEHOLDER_VALUE_RE = re.compile(r"^\{[A-Za-z0-9_]+\}$")
 
 
@@ -130,7 +130,7 @@ class SessionManager:
         skill_root: Path | None = None,
     ):
         self.session_id = session_id or f"ses_{uuid.uuid4().hex[:12]}"
-        self.sut_name = sut_name
+        self.sut_name = canonical_sut_name(sut_name)
         self.scenario_name = scenario_name
         self.created_at = datetime.now().isoformat()
         self.updated_at = self.created_at
@@ -144,7 +144,7 @@ class SessionManager:
         self.draft_yaml_file = self.output_dir / f".draft_{self.scenario_name}.yaml"
         self.final_yaml_file = self.output_dir / f"{self.scenario_name}.yaml"
 
-        self.config_dir = self.skill_root / "configs" / sut_name
+        self.config_dir = self.skill_root / "configs" / self.sut_name
         self.sut_config = self._load_sut_config()
 
         self.variables: dict[str, Any] = {}
@@ -153,7 +153,7 @@ class SessionManager:
         preset_vars = self.sut_config.get("preset_variables", {})
         self.variables.update(preset_vars)
 
-        self.executor = SecureExecutor(sut_name, skill_root=self.skill_root)
+        self.executor = SecureExecutor(self.sut_name, skill_root=self.skill_root)
 
     def _load_sut_config(self) -> dict:
         sut_file = self.config_dir / "sut.yaml"

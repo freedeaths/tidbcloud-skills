@@ -188,7 +188,7 @@ scenario:
     auth:
       type: digest
     base_path: /v1beta1
-    host: serverless.tidbapi.com
+    host: dedicated.tidbapi.com
   description: "Scale in and out TiDB nodes"
   name: "scale_in_and_out_tidb"
 

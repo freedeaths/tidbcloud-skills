@@ -1,6 +1,6 @@
 ## tidbcloud-skills
 
-This repo contains a skill for **TiDB Cloud Serverless** API exploration + YAML scenario generation, plus a small local runner (`tidbcloud-manager`) used by the skill.
+This repo contains a skill for **TiDB Cloud especially TiDBX** API exploration + YAML scenario generation, plus a small local runner (`tidbcloud-manager`) used by the skill.
 
 Skill source lives in `skills/tidbcloud-manager/`.
 
@@ -23,6 +23,14 @@ pip install -e .
 ```
 
 `tidbcloud-manager` is a general-purpose local runner/executor. It was originally built to support automated testing workflows, and is reused here as the skill execution backend.
+
+## Optional CLI prerequisites (recommended)
+
+Some tasks (running SQL, managing cloud resources, etc.) require extra CLIs installed locally.
+
+- `mysqlsh` (recommended): used for running SQL against clusters via `tidbcloud-manager secure-exec cli`
+- `mysql` (optional fallback): used only if `mysqlsh` is not available
+- `aws` / `az` / `gcloud` (optional): only needed when your task touches those clouds
 
 ## Install the skill
 
@@ -73,18 +81,18 @@ Run from the skill directory:
 
 ```bash
 cd skills/tidbcloud-manager
-tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbcloud_serverless
+tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbx
 ```
 
 Or run from repo root (auto-detects `./skills/tidbcloud-manager/`):
 ```bash
-tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbcloud_serverless
+tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbx
 ```
 
 Session workflow:
 
 ```bash
-tidbcloud-manager session new tidbcloud_serverless demo
+tidbcloud-manager session new tidbx demo
 tidbcloud-manager session status <session_id>
 ```
 
@@ -93,8 +101,8 @@ tidbcloud-manager session status <session_id>
 If `openapi.json` is large, use these helpers instead of opening the whole file:
 
 ```bash
-tidbcloud-manager openapi list --sut tidbcloud_serverless --query cluster
-tidbcloud-manager openapi extract --sut tidbcloud_serverless --operation-id ClusterService_CreateCluster
+tidbcloud-manager openapi list --sut tidbx --query cluster
+tidbcloud-manager openapi extract --sut tidbx --operation-id ClusterService_CreateCluster
 ```
 
 ## Export knowledge (optional)
@@ -102,10 +110,10 @@ tidbcloud-manager openapi extract --sut tidbcloud_serverless --operation-id Clus
 After you run successful/failed operations multiple times locally, you can export curated knowledge back into the repo:
 
 ```bash
-tidbcloud-manager knowledge export --sut tidbcloud_serverless
+tidbcloud-manager knowledge export --sut tidbx
 ```
 
-## Dedicated
+## Dedicated / Premium
 
 The initial open-source release is **serverless-only**. Dedicated support is intentionally not published in the first iteration.
 
@@ -115,6 +123,6 @@ Use the skill trigger:
 
 ```
 # Codex CLI / OpenCode (SKILL.md trigger)
-tidb serverless req: create a cluster named 'cluster-from-agent' with root password '...'
-tidb serverless req: delete the cluster
+tidbx req: create a cluster named 'cluster-from-agent' with root password '...'
+tidbx req: delete the cluster
 ```

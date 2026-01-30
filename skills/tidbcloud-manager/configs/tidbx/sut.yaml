@@ -1,4 +1,4 @@
-name: TiDB Cloud Serverless
+name: TiDB Cloud TiDBX (Starter/Essential)
 version: v1beta1
 
 # HTTP API Configuration
@@ -19,7 +19,7 @@ specs:
 preset_variables:
   project_id: ${TIDBCLOUD_PROJECT_ID:-}
 
-# Available CLI tools (Serverless mainly uses mysqlsh for DB operations)
+# Available CLI tools (useful for DB operations)
 cli_tools:
   mysqlsh:
     description: MySQL Shell for database operations
@@ -41,4 +41,4 @@ execution:
     max_silent_steps: 10
     polling:
       max_retries: 6
-      delay_seconds: 10  # Serverless is faster
+      delay_seconds: 10

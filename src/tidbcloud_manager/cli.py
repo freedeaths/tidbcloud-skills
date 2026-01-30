@@ -16,7 +16,7 @@ def main(argv: list[str] | None = None) -> int:
     se = sub.add_parser("secure-exec", help="Execute one request without exposing credentials")
     se.add_argument("mode", choices=["http", "cli", "poll"])
     se.add_argument("request_json")
-    se.add_argument("--sut", dest="sut_name", default=None, help="SUT name under ./configs (e.g. tidbcloud_serverless)")
+    se.add_argument("--sut", dest="sut_name", default=None, help="SUT name under ./configs (e.g. tidbx)")
 
     sm = sub.add_parser("session", help="Manage exploration sessions and generate YAML")
     sm.add_argument("args", nargs=argparse.REMAINDER)

@@ -7,11 +7,11 @@ The knowledge base enables cross-session learning. It stores successful patterns
 ```
 ~/.tidbcloud-manager/
 ├── knowledge/
-│   ├── tidbcloud_dedicated/
+│   ├── dedicated/
 │   │   ├── patterns.yaml        # Successful patterns
 │   │   ├── pitfalls.yaml        # Known failure patterns
 │   │   └── stats.yaml           # Operation statistics
-│   └── tidbcloud_serverless/
+│   └── tidbx/
 │       └── ...
 └── sessions/
     └── {session_id}.yaml        # Session history

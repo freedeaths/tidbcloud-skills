@@ -21,7 +21,7 @@ import requests
 from requests.auth import HTTPDigestAuth
 import yaml
 
-from .runtime import expand_env_vars, load_dotenv_from, resolve_skill_root
+from .runtime import canonical_sut_name, expand_env_vars, load_dotenv_from, resolve_skill_root
 
 
 @dataclass
@@ -51,12 +51,12 @@ class ExecutionResult:
 class SecureExecutor:
     """Execute requests without exposing credentials."""
 
-    def __init__(self, sut_name: str = "tidbcloud_serverless", *, skill_root: Path | None = None):
-        self.sut_name = sut_name
+    def __init__(self, sut_name: str = "tidbx", *, skill_root: Path | None = None):
+        self.sut_name = canonical_sut_name(sut_name)
         self.skill_root = skill_root or resolve_skill_root()
         load_dotenv_from(self.skill_root)
 
-        self.config_dir = self.skill_root / "configs" / sut_name
+        self.config_dir = self.skill_root / "configs" / self.sut_name
         self.sut_config = self._load_sut_config()
         self.credentials = self._load_credentials()
 
@@ -182,6 +182,9 @@ class SecureExecutor:
         request = expand_env_vars(request)
         tool = request.get("tool", "")
         args = request.get("args", [])
+        env = request.get("env")
+        stdin = request.get("stdin")
+        fallback = request.get("fallback", [])
         if not tool:
             return ExecutionResult(
                 success=False,
@@ -200,46 +203,123 @@ class SecureExecutor:
                 duration_ms=0,
             )
 
-        cmd = [tool] + [str(a) for a in args]
-        start_time = time.time()
-
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            duration_ms = int((time.time() - start_time) * 1000)
-
-            stdout = (result.stdout or "").strip()
-            stderr = (result.stderr or "").strip()
-            success = result.returncode == 0
-
-            body: dict
-            if stdout:
-                try:
-                    body = json.loads(stdout)
-                except json.JSONDecodeError:
-                    body = {"stdout": stdout[:2000]}
-            else:
-                body = {}
-
-            if stderr:
-                body["stderr"] = stderr[:2000]
-
-            return ExecutionResult(
-                success=success,
-                status_code=result.returncode,
-                body=body,
-                error=None if success else f"Exit {result.returncode}",
-                duration_ms=duration_ms,
-            )
-
-        except subprocess.SubprocessError as e:
-            duration_ms = int((time.time() - start_time) * 1000)
+        if env is not None and not isinstance(env, dict):
             return ExecutionResult(
                 success=False,
                 status_code=None,
                 body={},
-                error=str(e),
-                duration_ms=duration_ms,
+                error="'env' must be an object (dict) when provided",
+                duration_ms=0,
             )
+
+        if stdin is not None and not isinstance(stdin, str):
+            return ExecutionResult(
+                success=False,
+                status_code=None,
+                body={},
+                error="'stdin' must be a string when provided",
+                duration_ms=0,
+            )
+
+        if fallback is not None and not isinstance(fallback, list):
+            return ExecutionResult(
+                success=False,
+                status_code=None,
+                body={},
+                error="'fallback' must be a list when provided",
+                duration_ms=0,
+            )
+
+        def _run_one(tool_name: str, tool_args: list, tool_env: dict | None, tool_stdin: str | None) -> ExecutionResult:
+            cmd = [tool_name] + [str(a) for a in tool_args]
+            start_time = time.time()
+            try:
+                run_env = os.environ.copy()
+                if tool_env:
+                    for k, v in tool_env.items():
+                        if v is None:
+                            continue
+                        run_env[str(k)] = str(v)
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    input=tool_stdin,
+                    env=run_env,
+                )
+                duration_ms = int((time.time() - start_time) * 1000)
+
+                stdout = (result.stdout or "").strip()
+                stderr = (result.stderr or "").strip()
+                success = result.returncode == 0
+
+                body: dict
+                if stdout:
+                    try:
+                        body = json.loads(stdout)
+                    except json.JSONDecodeError:
+                        body = {"stdout": stdout[:2000]}
+                else:
+                    body = {}
+
+                if stderr:
+                    body["stderr"] = stderr[:2000]
+
+                return ExecutionResult(
+                    success=success,
+                    status_code=result.returncode,
+                    body=body,
+                    error=None if success else f"Exit {result.returncode}",
+                    duration_ms=duration_ms,
+                )
+            except FileNotFoundError as e:
+                duration_ms = int((time.time() - start_time) * 1000)
+                return ExecutionResult(
+                    success=False,
+                    status_code=127,
+                    body={},
+                    error=f"Tool not found: {tool_name} ({e})",
+                    duration_ms=duration_ms,
+                )
+            except subprocess.SubprocessError as e:
+                duration_ms = int((time.time() - start_time) * 1000)
+                return ExecutionResult(
+                    success=False,
+                    status_code=None,
+                    body={},
+                    error=str(e),
+                    duration_ms=duration_ms,
+                )
+
+        primary = _run_one(tool, args, env if isinstance(env, dict) else None, stdin if isinstance(stdin, str) else None)
+        if primary.success:
+            return primary
+
+        for fb in fallback or []:
+            if not isinstance(fb, dict):
+                continue
+            fb_tool = fb.get("tool")
+            fb_args = fb.get("args", [])
+            fb_env = fb.get("env")
+            fb_stdin = fb.get("stdin")
+            if not isinstance(fb_tool, str) or not fb_tool:
+                continue
+            if not isinstance(fb_args, list):
+                continue
+            if fb_env is not None and not isinstance(fb_env, dict):
+                continue
+            if fb_stdin is not None and not isinstance(fb_stdin, str):
+                continue
+
+            attempt = _run_one(fb_tool, fb_args, fb_env, fb_stdin)
+            if attempt.success:
+                attempt.body = dict(attempt.body or {})
+                attempt.body.setdefault("_fallback", {"used": fb_tool, "primary_error": primary.error})
+                return attempt
+
+        return primary
 
     def poll_until_ready(
         self, request: dict, expect_cel: str, max_retries: int = 60, delay_seconds: int = 30
@@ -294,9 +374,9 @@ def main(argv: list[str] | None = None) -> int:
                     "success": False,
                     "error": "Usage: tidbcloud-manager secure-exec <http|cli|poll> '<json_request>' [--sut <sut_name>]",
                     "examples": [
-                        'tidbcloud-manager secure-exec http \'{"method":"GET","path":"/clusters"}\' --sut tidbcloud_serverless',
-                        'tidbcloud-manager secure-exec cli \'{"tool":"aws","args":["ec2","describe-instances"]}\' --sut tidbcloud_dedicated',
-                        'tidbcloud-manager secure-exec poll \'{"method":"GET","path":"/clusters/123","expect":"body.state == ACTIVE","max_retries":60,"delay":30}\' --sut tidbcloud_serverless',
+                        'tidbcloud-manager secure-exec http \'{"method":"GET","path":"/clusters"}\' --sut tidbx',
+                        'tidbcloud-manager secure-exec cli \'{"tool":"aws","args":["ec2","describe-instances"]}\' --sut dedicated',
+                        'tidbcloud-manager secure-exec poll \'{"method":"GET","path":"/clusters/123","expect":"body.state == ACTIVE","max_retries":60,"delay":30}\' --sut tidbx',
                     ],
                 }
             )
@@ -306,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
     command = argv[0]
     request_json = argv[1]
 
-    sut_name = os.environ.get("TIDBCLOUD_SUT", "tidbcloud_serverless")
+    sut_name = os.environ.get("TIDBCLOUD_SUT", "tidbx")
     # Compatibility: allow either `--sut <name>` or a 3rd positional arg (legacy script style).
     if "--sut" in argv:
         i = argv.index("--sut")

@@ -8,6 +8,20 @@ from typing import Any
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Z0-9_]+)(?::-([^}]*))?\}")
 
+_DEFAULT_SUT = "tidbx"
+_SUT_ALIASES: dict[str, str] = {
+    # Backward-compat: older configs/docs used these names.
+    "tidbcloud_serverless": _DEFAULT_SUT,
+    "tidbcloud_dedicated": "dedicated",
+}
+
+
+def canonical_sut_name(sut_name: str | None) -> str:
+    name = (sut_name or "").strip()
+    if not name:
+        return _DEFAULT_SUT
+    return _SUT_ALIASES.get(name, name)
+
 
 def resolve_skill_root(start: Path | None = None) -> Path:
     explicit = os.environ.get("TIDBCLOUD_MANAGER_SKILL_DIR") or os.environ.get("SKILL_DIR")

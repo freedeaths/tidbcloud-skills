@@ -7,7 +7,7 @@ from typing import Any, Iterable
 
 import yaml
 
-from .runtime import resolve_skill_root
+from .runtime import canonical_sut_name, resolve_skill_root
 
 
 def _load_json(path: Path) -> dict:
@@ -28,7 +28,7 @@ def _spec_path_for_sut(skill_root: Path, sut_name: str) -> Path:
 
 def load_openapi_spec(*, sut_name: str, skill_root: Path | None = None) -> tuple[Path, dict]:
     root = skill_root or resolve_skill_root()
-    spec_path = _spec_path_for_sut(root, sut_name)
+    spec_path = _spec_path_for_sut(root, canonical_sut_name(sut_name))
     if not spec_path.exists():
         raise FileNotFoundError(f"OpenAPI spec not found: {spec_path}")
     return spec_path, _load_json(spec_path)
@@ -188,4 +188,3 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     return 1
-

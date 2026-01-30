@@ -91,11 +91,11 @@ connection:
 ### Example usage
 
 ```bash
-tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbcloud_serverless
+tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbx
 
-tidbcloud-manager secure-exec http '{"method":"POST","path":"/clusters","body":{"name":"test"}}' --sut tidbcloud_serverless
+tidbcloud-manager secure-exec http '{"method":"POST","path":"/clusters","body":{"displayName":"test","labels":{"tidb.cloud/project":"${TIDBCLOUD_PROJECT_ID}"},"region":{"name":"${TIDBCLOUD_REGION_NAME:-regions/aws-us-east-1}"}}}' --sut tidbx
 
-tidbcloud-manager secure-exec poll '{"method":"GET","path":"/clusters/123","expect":"body.state == ACTIVE","max_retries":60,"delay":30}' --sut tidbcloud_serverless
+tidbcloud-manager secure-exec poll '{"method":"GET","path":"/clusters/123","expect":"body.state == ACTIVE","max_retries":60,"delay":30}' --sut tidbx
 ```
 
 ### What the agent sees:
@@ -130,7 +130,7 @@ For CLI commands, credentials are read from standard locations:
 
 Example:
 ```bash
-python scripts/secure_executor.py cli '{"tool":"aws","args":["ec2","describe-vpcs","--region","us-east-1"]}'
+tidbcloud-manager secure-exec cli '{"tool":"aws","args":["ec2","describe-vpcs","--region","us-east-1"]}'
 ```
 
 ## Verification
@@ -139,7 +139,7 @@ Test that credentials are working:
 
 ```bash
 # Should return cluster list without showing credentials
-python scripts/secure_executor.py http '{"method":"GET","path":"/clusters"}'
+tidbcloud-manager secure-exec http '{"method":"GET","path":"/clusters"}' --sut tidbx
 ```
 
 If you see `{"success":false,"error":"...401..."}`, check your credentials.
@@ -167,4 +167,4 @@ This should **never happen** if using `tidbcloud-manager secure-exec`. The runne
 
 If you're seeing credentials in Claude's context:
 - You might be using `curl` directly instead of `tidbcloud-manager secure-exec`
-- Check that SKILL.md instructs to use `secure_executor.py`
+- Check that SKILL.md instructs to use `tidbcloud-manager secure-exec`

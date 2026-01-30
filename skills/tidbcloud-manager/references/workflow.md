@@ -187,7 +187,7 @@ Sessions are persisted to enable:
 # ~/.tidbcloud-manager/sessions/{session_id}.yaml
 session:
   id: "ses_abc123"
-  sut: "tidbcloud_dedicated"
+  sut: "dedicated"
   target: "create cluster, scale out, delete"
   mode: "auto"
   created_at: "2025-01-12T10:00:00Z"
