@@ -1,0 +1,18 @@
+name: TiDB Zero (Temporary / Playground)
+version: v1
+
+# HTTP API Configuration (no auth)
+connection:
+  host: ${TIDBZERO_HOST:-}
+  base_path: ${TIDBZERO_BASE_PATH:-/v1alpha1}
+  auth:
+    type: none
+
+# OpenAPI spec for HTTP requests
+specs:
+  openapi: openapi.json
+
+# Preset variables (optional convenience)
+preset_variables:
+  activation_code: ${TIDB0_ACTIVATION_CODE:-}
+

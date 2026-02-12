@@ -1,8 +1,11 @@
 ## tidbcloud-skills
 
-This repo contains a skill for **TiDB Cloud (focusing on TiDBX)** API exploration + YAML scenario generation, plus a small local runner (`tidbcloud-manager`) used by the skill.
+This repo contains:
+- `tidbcloud-manager`: a skill for **TiDB Cloud (focusing on TiDBX)** API exploration + YAML scenario generation, plus a small local runner (`tidbcloud-manager`) used by the skill.
+- `tidb-zero`: a lightweight skill to create and use temporary/playground TiDB databases without authentication but activation code (no `pip install -e .` required).
 
-Skill source lives in `skills/tidbcloud-manager/`.
+`tidbcloud-manager` skill source lives in `skills/tidbcloud-manager/`.
+`tidb-zero` skill source lives in `skills/tidb-zero/`.
 
 Supported AI coding assistants:
 - **Codex CLI** (OpenAI)
@@ -33,6 +36,13 @@ Some tasks (running SQL, managing cloud resources, etc.) require extra CLIs inst
 - `aws` / `az` / `gcloud` (optional): only needed when your task touches those clouds
 
 ## Install the skill
+
+### Install `tidb-zero` (recommended)
+
+Recommended install command:
+```bash
+npx skills add https://github.com/tidbcloud/skills --skill tidb-zero
+```
 
 ### For Codex CLI
 
